@@ -1,0 +1,43 @@
+github:
+
+  # All the options set here are the defaults that are used when the script is
+  # run. You can override each of these values via the launch options.
+  # Run the script with -? or --help for specifics.
+
+  # REQUIRED: Either specify an auth token to use or your username and password.
+  # If the auth token is defined, it will be used instead of the username/password.
+  # You can generate an auth token here: https://github.com/settings/applications
+  auth_token:
+  username:
+  password:
+  
+  # REQUIRED: The github organization to search in. (Case Sensitive)
+  org: Organization
+  
+  # REQUIRED: The list of repositories to search in. (Case Sensitive)
+  # NOTE 1: The more you add in here, the more api requests that need to be made,
+  # and the slower the script will run.
+  # NOTE 2: Including 'all' in the list will cause the script to fetch a list of
+  # all repos in the organization, and use that as the list of repos to query.
+  repos:
+    - repo1
+    - repo2
+    
+  # REQUIRED: The list of authors (usernames) to search for PRs by. (Case insensitive)
+  authors:
+    - author1
+    - author2
+    
+  # OPTIONAL: Whether to automatically open PRs in the default browser.
+  # Defaults to false if not specified
+  # If set to false, the terminal will prompt you for which PRs to open.
+  # If set to true, it will automatically open all found PRs in the default browser.
+  auto_open: false
+  
+  # OPTIONAL: Whether to supress all non-essential terminal output. Defaults to
+  # false if not specified.
+  quiet_mode: false
+  
+  # OPTIONAL: Whether to show links beside each PR title. Defaults to false if
+  # not specified.
+  show_link: false
