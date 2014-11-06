@@ -40,8 +40,12 @@ OptionParser.new do |opts|
     options[:config] = file
   end
 
-  opts.on("-q", "--quiet", "Enables quiet mode. No terminal output outside of prompts for required input, or fatal error will be printed,") do |quiet_mode|
+  opts.on("-q", "--quiet", "Enables quiet mode. No terminal output outside of prompts for required input, or fatal error will be printed.") do |quiet_mode|
     options[:quiet_mode] = quiet_mode
+  end
+  
+  opts.on("-v", "--verbose", "Shows all the configured options on launch. If enabled this will also set quiet_mode to false.") do |verbose_mode|
+    options[:verbose_mode] = verbose_mode
   end
   
   opts.on("-b", "--auto-open", "Automatically open all PRs that were found in the default browser. No terminal prompt.") do |auto_open|
@@ -107,21 +111,12 @@ else
 end
 config = YAML.load(File.open(config_file))
 
-Validator = Struct.new(:name, :type)
-
-# NOTE: Ordinarily you can't refer to Boolean directly. Only TrueClass or
-# FalseClass. This little hack means you can refer to Boolean in the same way
-# as the String or Array class
-module Boolean; end
-class TrueClass; include Boolean; end
-class FalseClass; include Boolean; end
-
 # Validate that all the required config values are present
+Validator = Struct.new(:name, :type)
 [
   Validator.new('org', String),
   Validator.new('repos', Array),
-  Validator.new('authors', Array),
-  Validator.new('auto_open', Boolean)
+  Validator.new('authors', Array)
 ].each do |tuple|
   conf = config['github'][tuple.name]
   raise "Missing requred config param '#{tuple.name}'" unless !conf.nil?
@@ -133,19 +128,20 @@ if !((config['github']['username'] && config['github']['password']) || config['g
 end
 
 # Set all variables as needed. If they haven't been overwritten 
-username = options[:username] || config['github']['username']
-password = options[:password] || config['github']['password']
-auth_token = options[:auth_token] || config['github']['auth_token']
+username = options[:username] ||= config['github']['username']
+password = options[:password] ||= config['github']['password']
+auth_token = options[:auth_token] ||= config['github']['auth_token']
 
-org = options[:org] || config['github']['org']
-repos = (options[:repos] || config['github']['repos']).sort
-authors = (options[:authors] || config['github']['authors']).sort.map { |author| author.downcase.strip }
-auto_open = options[:auto_open] || config['github']['auto_open'] || false
-show_link = options[:show_link] || config['github']['show_link'] || false
-indent = options[:indent] || config['github']['indent'] || "    "
+org = options[:org] ||= config['github']['org']
+repos = (options[:repos] ||= config['github']['repos']).sort
+authors = (options[:authors] ||= config['github']['authors']).sort.map { |author| author.downcase.strip }
+auto_open = options[:auto_open] ||= config['github']['auto_open'] ||= false
+show_link = options[:show_link] ||= config['github']['show_link'] ||= false
+indent = options[:indent] ||= config['github']['indent'] ||= "    "
 
-# Whether to supress all non-essential output
-quiet_mode = options[:quiet_mode] || config['github']['quiet_mode'] || false
+verbose_mode = options[:verbose_mode] ||= config['github']['verbose_mode'] ||= false
+# If verbose mode is set from config file or via the command line, override quiet mode
+quiet_mode = !options[:verbose_mode] ||= !config['github']['verbose_mode'] ||= options[:quiet_mode] ||= config['github']['quiet_mode'] ||= false
 
 # The string used to separate blocks of output
 seperator = '--------------------------'
@@ -202,8 +198,13 @@ map = Hash.new()
 
 # Pre-launch printout
 
-if !quiet_mode
+if verbose_mode
   puts seperator
+  if auth_token.nil?
+    puts "Using Auth: username/password '#{username}'/'#{"*" * password.size}'"
+  else
+    puts "Using Auth: Token '#{"*" * auth_token.size}'"
+  end
   if auto_open
     puts "Automatically opening PRs made by;"
   else
@@ -212,15 +213,14 @@ if !quiet_mode
   puts "#{indent}* #{authors.join("\n#{indent}* ")}"
   puts "In the organization '#{org}' to the following repos;"
   puts "#{indent}* #{repos.join("\n#{indent}* ")}"
-  if auth_token.nil?
-    puts "Using the username/password '#{username}'/'#{"*" * password.size}'"
-  else
-    puts "Using an auth token '#{auth_token}'"
-  end
+
+  puts "Formatting;"
   if show_link
-    puts "Printing the link to the PR underneath each title."
+    puts "#{indent}Printing links for each PR."
+  else
+    puts "#{indent}Not printing links for each PR."
   end
-  puts "And an indent of '#{indent}'"
+  puts "#{indent}And using an indent of '#{indent}'."
   puts seperator
 end
 
@@ -281,9 +281,7 @@ repos.each do |repo|
 
   end
 end
-
 buffer ""
-
 
 # Printout a little stats for the user so they know what was found
 puts seperator

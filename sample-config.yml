@@ -38,6 +38,10 @@ github:
   # false if not specified.
   quiet_mode: false
   
+  # OPTIONAL: Shows all the configured options on launch. If set to true, this
+  # will also set quiet_mode to false. Defaults to false
+  verbose_mode: false
+
   # OPTIONAL: Whether to show links beside each PR title. Defaults to false if
   # not specified.
   show_link: false
