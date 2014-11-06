@@ -52,6 +52,10 @@ OptionParser.new do |opts|
     options[:show_link] = show_link
   end
   
+  opts.on("-i", "--indent [indent]", "Specify the how to indent lines.") do |indent|
+    options[:indent] = indent
+  end
+
   # Search Config
   
   opts.on("-o", "--org [org]", String, "Organization to search in.") do |org|
@@ -138,6 +142,7 @@ repos = (options[:repos] || config['github']['repos']).sort
 authors = (options[:authors] || config['github']['authors']).sort.map { |author| author.downcase.strip }
 auto_open = options[:auto_open] || config['github']['auto_open'] || false
 show_link = options[:show_link] || config['github']['show_link'] || false
+indent = options[:indent] || config['github']['indent'] || "    "
 
 # Whether to supress all non-essential output
 quiet_mode = options[:quiet_mode] || config['github']['quiet_mode'] || false
@@ -202,17 +207,18 @@ if auto_open
 else
   puts "Finding open PRs made by;"
 end
-puts "\t* #{authors.join("\n\t* ")}"
+puts "#{indent}* #{authors.join("\n#{indent}* ")}"
 puts "In the organization '#{org}' to the following repos;"
-puts "\t* #{repos.join("\n\t* ")}"
+puts "#{indent}* #{repos.join("\n#{indent}* ")}"
 if auth_token.nil?
-  puts "Using the username/passwor '#{username}'/'#{"*" * password.size}'"
+  puts "Using the username/password '#{username}'/'#{"*" * password.size}'"
 else
-  puts "Using the auth token '#{auth_token}'"
+  puts "Using an auth token '#{auth_token}'"
 end
 if show_link
   puts "Printing the link to the PR underneath each title."
 end
+puts "And an indent of '#{indent}'"
 puts seperator
 
 # ----------------------------------------------------------------------------#
@@ -281,11 +287,11 @@ if !quiet_mode
   map.each do |author, repo|
     puts "#{author}"
     repo.each { |repo, commits|
-      puts "\t#{repo}, #{commits.size} PR#{(commits.size == 1) ? "" : "s"};"
+      puts "#{indent}#{repo}, #{commits.size} PR#{(commits.size == 1) ? "" : "s"};"
       commits.each { |commit|
-        puts "\t\t#{commit['title']}"
+        puts "#{indent * 2}#{commit['title']}"
         if show_link
-          puts "\t\t\t#{commit['url']}"
+          puts "#{indent * 3}#{commit['url']}"
         end
       }
     }

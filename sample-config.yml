@@ -41,3 +41,7 @@ github:
   # OPTIONAL: Whether to show links beside each PR title. Defaults to false if
   # not specified.
   show_link: false
+
+  # OPTIONAL: The indentation to use on each line. Defaults to 4 spaces if not
+  # specified. Probably a good idea to surround this with quotes. Tab == "\t"
+  indent: "    "
