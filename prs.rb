@@ -284,30 +284,40 @@ end
 
 buffer ""
 
-if !quiet_mode
-  # Printout a little stats for the user so they know what was found
-  puts seperator
-  map.each do |author, repo|
-    puts "#{author}"
-    repo.each { |repo, commits|
-      puts "#{indent}#{repo}, #{commits.size} PR#{(commits.size == 1) ? "" : "s"};"
-      commits.each { |commit|
+
+# Printout a little stats for the user so they know what was found
+puts seperator
+map.each do |author, repo|
+  puts "#{author}"
+  repo.each { |repo, commits|
+    puts "#{indent}#{commits.size} PR#{(commits.size == 1) ? "" : "s" } against #{repo}"
+
+    if !quiet_mode
+      # We're not in quiet mode, print out the title
+      commits.each do |commit|
         puts "#{indent * 2}#{commit['title']}"
+
+        # And if they want the link printed out, do that on the next line
         if show_link
           puts "#{indent * 3}#{commit['url']}"
         end
-      }
-    }
-  end
-  noPrs = (authors - map.keys)
-  puts "NOTE: #{noPrs.join(", ")} #{(noPrs.size == 1) ? "has" : "have"} no open prs"
+      end
 
-  puts seperator
-  puts
-  puts seperator
+    elsif show_link
+      # We're in quiet mode, but they've said they want to see the links
+      commits.each do |commit|
+        puts "#{indent * 2}#{commit['url']}"
+      end
+    end
+  }
 end
 
+noPrs = (authors - map.keys)
+puts "NOTE: #{noPrs.join(", ")} #{(noPrs.size == 1) ? "has" : "have"} no open prs"
 
+puts seperator
+puts
+puts seperator
 
 # Either automatically open all prs, or ask the user which prs they wish to open
 if auto_open
