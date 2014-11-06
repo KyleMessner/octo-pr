@@ -201,25 +201,28 @@ end
 map = Hash.new()
 
 # Pre-launch printout
-puts seperator
-if auto_open
-  puts "Automatically opening PRs made by;"
-else
-  puts "Finding open PRs made by;"
+
+if !quiet_mode
+  puts seperator
+  if auto_open
+    puts "Automatically opening PRs made by;"
+  else
+    puts "Finding open PRs made by;"
+  end
+  puts "#{indent}* #{authors.join("\n#{indent}* ")}"
+  puts "In the organization '#{org}' to the following repos;"
+  puts "#{indent}* #{repos.join("\n#{indent}* ")}"
+  if auth_token.nil?
+    puts "Using the username/password '#{username}'/'#{"*" * password.size}'"
+  else
+    puts "Using an auth token '#{auth_token}'"
+  end
+  if show_link
+    puts "Printing the link to the PR underneath each title."
+  end
+  puts "And an indent of '#{indent}'"
+  puts seperator
 end
-puts "#{indent}* #{authors.join("\n#{indent}* ")}"
-puts "In the organization '#{org}' to the following repos;"
-puts "#{indent}* #{repos.join("\n#{indent}* ")}"
-if auth_token.nil?
-  puts "Using the username/password '#{username}'/'#{"*" * password.size}'"
-else
-  puts "Using an auth token '#{auth_token}'"
-end
-if show_link
-  puts "Printing the link to the PR underneath each title."
-end
-puts "And an indent of '#{indent}'"
-puts seperator
 
 # ----------------------------------------------------------------------------#
 # END: Pre-launch
@@ -235,7 +238,7 @@ repos.each do |repo|
   # Status printout. Useful for when you're checking a lot of repos.
   count += 1
   buffer "Getting PRs for '#{org}/#{repo}' (#{count}/#{repos.size})"
-  
+
   json = gh.repos(org, repo).pulls({:state => "open"}).all
 
   if json.class.name != "Array"
@@ -298,13 +301,15 @@ if !quiet_mode
   end
   noPrs = (authors - map.keys)
   puts "NOTE: #{noPrs.join(", ")} #{(noPrs.size == 1) ? "has" : "have"} no open prs"
+
   puts seperator
   puts
+  puts seperator
 end
 
-# Either automatically open all prs, or ask the user which prs they wish to open
-puts seperator
 
+
+# Either automatically open all prs, or ask the user which prs they wish to open
 if auto_open
   puts "Automatically opening links for all found PRs."
   author = "all"
@@ -320,11 +325,9 @@ else
       puts "Don't know about `#{author}`, Valid inputs are: #{validInputs.join(", ")}"
     end
   end while !validInputs.include? author
-  
 end
 
 # Go through and open all requested PRs.
-# TODO: Add support for specifying multiple authors
 if author == "all"
   map.each { |_,repo|
     repo.each{ |_,commits|
@@ -345,10 +348,11 @@ else
   puts "Invalid author specified. '#{author}'"
 end
 
-puts seperator
-puts
-
-# Wey-hey, we're all done.
+if !quiet_mode
+  puts seperator
+  puts
+  # Wey-hey, we're all done.
+end
 puts "Done."
 
 # ----------------------------------------------------------------------------#
