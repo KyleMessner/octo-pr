@@ -165,12 +165,26 @@ def buffer(message);
   $stdout.flush
 end
 
-def openLink(link);
-  # Because Launchy sometimes fails to open multiple tabs if it is called too quickly
-  sleep(0.1) 
-  Launchy.open(link) do |exception|
-    puts "Attempted to open #{uri} and failed because #{exception}"
+# Class which handles opening urls in the default browser.
+class Browser
+
+  @@already_opened_prs = Set.new()
+
+  # Open a url in the browser.
+  # Automatically filters urls if they've already been opened.
+  def open(url);
+    if !@@already_opened_prs.include? url
+      # Because Launchy sometimes fails to open multiple tabs if it is called too quickly
+      sleep(0.1)
+      Launchy.open(url) do |exception|
+        puts "Attempted to open #{uri} and failed because #{exception}"
+      end
+      @@already_opened_prs.add url
+    else
+      puts "filtered #{url}"
+    end
   end
+
 end
 
 # ----------------------------------------------------------------------------#
@@ -195,6 +209,7 @@ if repos.include? "all"
   repos = repos.sort
 end
 map = Hash.new()
+numbers = Hash.new()
 
 # Pre-launch printout
 
@@ -270,12 +285,11 @@ repos.each do |repo|
           map[author][repo] = Array.new()
         end
 
-        # Only extract the pertinent info
-        pr = { "title" => pr["title"], "url" => pr["_links"]['html']['href'] }
+        number = pr['number'].to_s
+        url = pr['_links']['html']['href']
 
-        # Add each open PR to a map where;
-        # Author -> [repo name -> List of PRs]
-        map[author][repo].push pr
+        map[author][repo].push({ 'title' => pr['title'], 'number' => number, 'url' => url })
+        numbers[number] = url
       end
     end
 
@@ -293,7 +307,7 @@ map.each do |author, repo|
     if !quiet_mode
       # We're not in quiet mode, print out the title
       commits.each do |commit|
-        puts "#{indent * 2}#{commit['title']}"
+        puts "#{indent * 2}#{commit['number']}: #{commit['title']}"
 
         # And if they want the link printed out, do that on the next line
         if show_link
@@ -320,47 +334,62 @@ puts seperator
 # Either automatically open all prs, or ask the user which prs they wish to open
 if auto_open
   puts "Automatically opening links for all found PRs."
-  author = "all"
+  options = Set.new("all")
 else
-  validInputs = (authors & map.keys) + ["all", "none"]
-  puts "Whose PRs do you want to open: #{validInputs.join(", ")}?"
+  validAuthors = (authors & map.keys).sort
+  validNumbers = numbers.keys.sort
+  validCommands = ["all", "none"]
+  allValid = (validAuthors + validNumbers + validCommands).to_set
 
-  Readline.completion_proc = proc { |s| authors.grep(/^#{Regexp.escape(s)}/) }
+  if !quiet_mode
+    puts "You can specify PRs to open by;"
+    puts "#{indent}Author: #{validAuthors.join(", ")}"
+    puts "#{indent}PR #: #{validNumbers.join(", ")}"
+    puts "#{indent}Misc: #{validCommands.join(", ")}"
+  end
+
+  Readline.completion_proc = proc { |s| allValid.grep(/^#{Regexp.escape(s)}/) }
 
   begin
-    author = Readline.readline('> ', true).chomp.strip
-    if !validInputs.include? author
-      puts "Don't know about `#{author}`, Valid inputs are: #{validInputs.join(", ")}"
+    commands = Readline.readline('> ', true).chomp.strip.split(" ").to_set
+    if commands.size == 1 && !(commands < allValid)
+      puts "Unknown command #{commands.inspect} specified."
+    elsif !(commands < allValid)
+      puts "Specified unknown commands: `#{commands.inspect}`."
     end
-  end while !validInputs.include? author
+  end while !(commands < allValid)
 end
 
-# Go through and open all requested PRs.
-if author == "all"
-  map.each { |_,repo|
-    repo.each{ |_,commits|
-      commits.each { |commit|
-        openLink(commit['url'])
+# Open all requested PRs in the default browser
+browser = Browser.new()
+commands.each do |command|
+  if command == "all"
+    map.each { |_,repo|
+      repo.each{ |_,commits|
+        commits.each { |commit|
+          browser.open commit['url']
+        }
       }
     }
-  }
-elsif author == "none"
-  # Nothing to do here.
-elsif map.has_key? author
-  map[author].each { |_,commits|
-    commits.each { |commit|
-      openLink(commit['url'])
+  elsif command == "none"
+    # Nothing to do here.
+  elsif map.has_key? command
+    map[command].each { |_,commits|
+      commits.each { |commit|
+        browser.open commit['url']
+      }
     }
-  }
-else
-  puts "Invalid author specified. '#{author}'"
+  elsif numbers.has_key? command
+    browser.open numbers[command]
+  end
 end
 
 if !quiet_mode
   puts seperator
   puts
-  # Wey-hey, we're all done.
 end
+
+# Wey-hey, we're all done.
 puts "Done."
 
 # ----------------------------------------------------------------------------#
