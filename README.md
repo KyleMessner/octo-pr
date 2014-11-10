@@ -4,13 +4,15 @@ OctoPR
 Ruby script to get a list of open PRs against a list of repositories, filtered by author. Allows found PRs to be opened in the default browser.
 
 
-Configuration
+Running the script
 ======
 
-This script assumes that there is a yaml file that lives at `~/prs.yml. See `sample-config.yml` for a sample config file.
+Run the script using;
+> ruby prs.rb -c /path/to/config/file
 
-All configurations can be overriden on launch, including the location of the config file. To see the options/help run;
+See `sample-config.yml` for a sample config file.
 
+All configurations set in the config file can be overridden on launch. More information can be gotten from the help;
 > ruby prs.rb -?
 
 Dependencies
