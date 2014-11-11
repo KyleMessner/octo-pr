@@ -2,8 +2,14 @@
 
 class Interface
   
+  def initialize(config);
+    @config = config
+  end
+  
   def display(prs);
-    puts "No output to display."
+    if !@config.quiet_mode
+      puts "No output to display."
+    end
   end
   
 end

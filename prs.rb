@@ -55,9 +55,11 @@ puts config.seperator
 interface = if config.interface == "terminal"
   Terminal.new(config)
 else
-  Interface.new()
+  Interface.new(config)
 end
 interface.display(pr_store)
 
 # Wey-hey, we're all done.
-puts "Done."
+if !config.quiet_mode
+  puts "Done."
+end

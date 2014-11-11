@@ -173,7 +173,9 @@ def configure
   end
   config_path = options[:config]
   if File.exists? config_path
-    puts "Using config file at '#{config_path}'"
+    if !options[:quiet_mode] 
+      puts "Using config file at '#{config_path}'"
+    end
   else
     puts "Woah, config file '#{config_path}' doesn't exist, can't continue."
     puts "Exiting immediately."
